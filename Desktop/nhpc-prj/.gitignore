@@ -1,0 +1,25 @@
+# Build artifacts
+suara_2d_comprehensive
+*.o
+*.out
+
+# Logs and temporary files
+*.log
+test_run.log
+large_test_run.log
+
+# Results (generated)
+suara_2d_results/
+
+# OS / editor
+.DS_Store
+.vscode/
+*.swp
+*~
+
+# Python envs
+__pycache__/
+*.py[cod]
+
+# Ignore compiled Jupyter notebooks if any
+.ipynb_checkpoints/
