@@ -1,0 +1,51 @@
+# SUARA 3D Visualization Requirements
+# ====================================
+
+# For Matplotlib Animation (suara_3d_animation.py)
+# -------------------------------------------------
+numpy>=1.21.0
+matplotlib>=3.5.0
+
+# For Manim Animation (suara_3d_manim_animation.py)
+# -------------------------------------------------
+manim>=0.17.0
+# Note: Manim also requires:
+#   - FFmpeg (for video rendering)
+#   - LaTeX (optional, for mathematical text)
+# Installation: pip install manim
+
+# For Web Visualization (suara_3d_web_visualization.html)
+# --------------------------------------------------------
+# No Python dependencies - runs directly in web browser
+# Requires modern browser with WebGL support (Chrome, Firefox, Safari, Edge)
+
+# Optional: For enhanced features
+# --------------------------------
+scipy>=1.7.0
+pillow>=9.0.0
+
+# Development and Testing
+# -----------------------
+pytest>=7.0.0
+jupyter>=1.0.0
+
+# Installation Instructions
+# =========================
+#
+# 1. Basic installation:
+#    pip install -r requirements_visualization.txt
+#
+# 2. For Manim (high-quality video):
+#    - Install FFmpeg:
+#      * Ubuntu/Debian: sudo apt-get install ffmpeg
+#      * macOS: brew install ffmpeg
+#      * Windows: Download from https://ffmpeg.org/
+#    - Install LaTeX (optional):
+#      * Ubuntu/Debian: sudo apt-get install texlive-full
+#      * macOS: brew install --cask mactex
+#      * Windows: Download MiKTeX from https://miktex.org/
+#
+# 3. Verify installations:
+#    python -c "import matplotlib; print(matplotlib.__version__)"
+#    python -c "import manim; print(manim.__version__)"
+#    ffmpeg -version
