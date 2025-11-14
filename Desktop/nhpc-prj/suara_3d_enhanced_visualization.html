@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUARA 3D - Enhanced Phase Traversal Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #info-panel {
+            width: 450px;
+            background: rgba(20, 20, 30, 0.95);
+            padding: 25px;
+            overflow-y: auto;
+            border-left: 3px solid #4ecdc4;
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.7);
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 26px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #4ecdc4;
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #4ecdc4;
+            padding-bottom: 5px;
+        }
+
+        .phase-info {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.15) 0%, rgba(78, 205, 196, 0.05) 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #4ecdc4;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .phase-name {
+            font-size: 22px;
+            color: #ffe66d;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .phase-group {
+            font-size: 16px;
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .phase-desc {
+            font-size: 15px;
+            color: #e0e0e0;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .phase-detail {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 3px solid #ffe66d;
+        }
+
+        .controls {
+            margin-top: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(255, 107, 107, 0.05) 100%);
+            border-radius: 10px;
+            border: 2px solid #ff6b6b;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            margin: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.7);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .phase-button {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a3a0 100%);
+            padding: 10px 18px;
+            font-size: 13px;
+            margin: 4px;
+        }
+
+        .phase-button.active {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #0a0a0a;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 230, 109, 0.15);
+            padding: 14px;
+            border-radius: 8px;
+            border: 2px solid #ffe66d;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #ffe66d;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 12px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            color: #4ecdc4;
+            text-shadow: 0 0 30px rgba(78, 205, 196, 1);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .checkbox-container {
+            margin: 12px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 12px 0;
+            cursor: pointer;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 5px;
+        }
+
+        .legend-color {
+            width: 35px;
+            height: 25px;
+            border-radius: 5px;
+            margin-right: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .step-indicator {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #ffd700;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .phase-groups {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid #4ecdc4;
+        }
+
+        .group-section {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            border-left: 3px solid #ffe66d;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <div id="loading">Loading Enhanced SUARA 3D...</div>
+        </div>
+        <div id="info-panel">
+            <h1>🚀 SUARA 3D - Phase Traversal</h1>
+            <p style="font-size: 14px; color: #999; margin-bottom: 20px;">
+                Enhanced visualization showing communication patterns
+            </p>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Grid Size</div>
+                    <div class="stat-value" id="grid-size">3×3×3</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Processes</div>
+                    <div class="stat-value" id="total-procs">27</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Current Step</div>
+                    <div class="stat-value" id="current-step">1/N</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Active Plane</div>
+                    <div class="stat-value" id="active-plane">XY-0</div>
+                </div>
+            </div>
+
+            <div class="phase-info">
+                <div class="phase-group" id="phase-group">GROUP 1: XY-PLANES</div>
+                <div class="phase-name" id="phase-name">Phase 1: Reduce along X</div>
+                <div class="phase-desc" id="phase-desc">
+                    Processing each Z-layer separately, reducing data along horizontal X-axis rows
+                </div>
+                <div class="step-indicator" id="step-indicator">
+                    Processing layer Z=0
+                </div>
+                <div class="phase-detail" id="phase-detail">
+                    <strong>What's happening:</strong><br>
+                    • Fix Z coordinate (layer by layer)<br>
+                    • Within each XY-plane, reduce along X (rows)<br>
+                    • Communication happens horizontally
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h2 style="margin-top: 0;">Animation Controls</h2>
+                <button id="play-pause">⏸ Pause</button>
+                <button id="reset">🔄 Reset</button>
+                <button id="prev-step">⏮ Prev Step</button>
+                <button id="next-step">⏭ Next Step</button>
+
+                <div style="margin-top: 15px;">
+                    <label for="speed-slider">Speed: <span id="speed-value">1.0</span>×</label>
+                    <input type="range" id="speed-slider" min="0.1" max="3" step="0.1" value="1.0">
+                </div>
+
+                <div class="checkbox-container">
+                    <input type="checkbox" id="auto-rotate" checked>
+                    <label for="auto-rotate">Auto-rotate Camera</label>
+                </div>
+
+                <div class="checkbox-container">
+                    <input type="checkbox" id="show-planes" checked>
+                    <label for="show-planes">Show Active Planes</label>
+                </div>
+
+                <div class="checkbox-container">
+                    <input type="checkbox" id="show-labels" checked>
+                    <label for="show-labels">Show Process Labels</label>
+                </div>
+            </div>
+
+            <h2>Phase Selection</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button class="phase-button active" data-phase="0">P1: X in XY</button>
+                <button class="phase-button" data-phase="1">P2: Y in XY</button>
+                <button class="phase-button" data-phase="2">P3: X in XZ</button>
+                <button class="phase-button" data-phase="3">P4: Z in XZ</button>
+                <button class="phase-button" data-phase="4">P5: Y in YZ</button>
+                <button class="phase-button" data-phase="5">P6: Z in YZ</button>
+            </div>
+
+            <div class="phase-groups">
+                <h2 style="margin-top: 0;">Phase Groups</h2>
+                <div class="group-section">
+                    <strong style="color: #ff6b6b;">GROUP 1: XY-Planes (Fix Z)</strong><br>
+                    <small>Phase 1: Reduce X | Phase 2: Reduce Y</small>
+                </div>
+                <div class="group-section">
+                    <strong style="color: #4ecdc4;">GROUP 2: XZ-Planes (Fix Y)</strong><br>
+                    <small>Phase 3: Reduce X | Phase 4: Reduce Z</small>
+                </div>
+                <div class="group-section">
+                    <strong style="color: #ffe66d;">GROUP 3: YZ-Planes (Fix X)</strong><br>
+                    <small>Phase 5: Reduce Y | Phase 6: Reduce Z</small>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h2>Legend</h2>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>Active Processes (Communicating)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(255, 107, 107, 0.3);"></div>
+                    <span>Active Plane (Current layer/slice)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2a4a5a;"></div>
+                    <span>Inactive Processes</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffd700;"></div>
+                    <span>Communication Arrows</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; padding: 18px; background: rgba(0,0,0,0.4); border-radius: 8px; font-size: 11px; color: #888; border: 1px solid #333;">
+                <strong style="color: #4ecdc4;">Interactive Controls:</strong><br>
+                • Left-click + drag: Rotate view<br>
+                • Right-click + drag: Pan view<br>
+                • Scroll: Zoom in/out<br>
+                • Use step buttons to see details<br>
+                • Watch how each phase processes different planes
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Enhanced SUARA 3D Visualization with clear phase distinction
+        let scene, camera, renderer, controls;
+        let processes = [];
+        let arrows = [];
+        let planes = [];
+        let labels = [];
+
+        // Grid configuration - 3×3×3
+        let X = 3, Y = 3, Z = 3;
+        let P = X * Y * Z;
+
+        // Animation state
+        let currentPhase = 0;
+        let currentStep = 0;
+        let isPlaying = true;
+        let animationSpeed = 1.0;
+        let autoRotate = true;
+        let showPlanes = true;
+        let showLabels = true;
+
+        // Phase definitions with clear traversal patterns
+        const phases = [
+            {
+                name: 'Phase 1: Reduce along X',
+                group: 'GROUP 1: XY-PLANES (Fix Z)',
+                fixedDim: 'Z',
+                reduceDim: 'X',
+                plane: 'XY',
+                color: 0xff6b6b,
+                desc: 'Processing each Z-layer separately, reducing data along horizontal X-axis rows',
+                detail: '• Fix Z coordinate (layer by layer)<br>• Within each XY-plane, reduce along X (rows)<br>• Communication happens horizontally',
+                getSteps: () => {
+                    let steps = [];
+                    for (let z = 0; z < Z; z++) {
+                        for (let y = 0; y < Y; y++) {
+                            steps.push({
+                                plane: z,
+                                row: y,
+                                processes: Array.from({length: X}, (_, x) => ({x, y, z})),
+                                label: `Z=${z}, Row Y=${y}`
+                            });
+                        }
+                    }
+                    return steps;
+                }
+            },
+            {
+                name: 'Phase 2: Reduce along Y',
+                group: 'GROUP 1: XY-PLANES (Fix Z)',
+                fixedDim: 'Z',
+                reduceDim: 'Y',
+                plane: 'XY',
+                color: 0xff6b6b,
+                desc: 'Processing each Z-layer separately, reducing data along vertical Y-axis columns',
+                detail: '• Fix Z coordinate (layer by layer)<br>• Within each XY-plane, reduce along Y (columns)<br>• Communication happens vertically',
+                getSteps: () => {
+                    let steps = [];
+                    for (let z = 0; z < Z; z++) {
+                        for (let x = 0; x < X; x++) {
+                            steps.push({
+                                plane: z,
+                                column: x,
+                                processes: Array.from({length: Y}, (_, y) => ({x, y, z})),
+                                label: `Z=${z}, Column X=${x}`
+                            });
+                        }
+                    }
+                    return steps;
+                }
+            },
+            {
+                name: 'Phase 3: Reduce along X',
+                group: 'GROUP 2: XZ-PLANES (Fix Y)',
+                fixedDim: 'Y',
+                reduceDim: 'X',
+                plane: 'XZ',
+                color: 0x4ecdc4,
+                desc: 'Processing each Y-slice separately, reducing data along horizontal X-axis rows',
+                detail: '• Fix Y coordinate (slice by slice)<br>• Within each XZ-plane, reduce along X (rows)<br>• Communication happens horizontally',
+                getSteps: () => {
+                    let steps = [];
+                    for (let y = 0; y < Y; y++) {
+                        for (let z = 0; z < Z; z++) {
+                            steps.push({
+                                plane: y,
+                                row: z,
+                                processes: Array.from({length: X}, (_, x) => ({x, y, z})),
+                                label: `Y=${y}, Row Z=${z}`
+                            });
+                        }
+                    }
+                    return steps;
+                }
+            },
+            {
+                name: 'Phase 4: Reduce along Z',
+                group: 'GROUP 2: XZ-PLANES (Fix Y)',
+                fixedDim: 'Y',
+                reduceDim: 'Z',
+                plane: 'XZ',
+                color: 0x4ecdc4,
+                desc: 'Processing each Y-slice separately, reducing data along depth Z-axis lines',
+                detail: '• Fix Y coordinate (slice by slice)<br>• Within each XZ-plane, reduce along Z (depth)<br>• Communication happens in depth',
+                getSteps: () => {
+                    let steps = [];
+                    for (let y = 0; y < Y; y++) {
+                        for (let x = 0; x < X; x++) {
+                            steps.push({
+                                plane: y,
+                                column: x,
+                                processes: Array.from({length: Z}, (_, z) => ({x, y, z})),
+                                label: `Y=${y}, Column X=${x}`
+                            });
+                        }
+                    }
+                    return steps;
+                }
+            },
+            {
+                name: 'Phase 5: Reduce along Y',
+                group: 'GROUP 3: YZ-PLANES (Fix X)',
+                fixedDim: 'X',
+                reduceDim: 'Y',
+                plane: 'YZ',
+                color: 0xffe66d,
+                desc: 'Processing each X-slice separately, reducing data along vertical Y-axis columns',
+                detail: '• Fix X coordinate (slice by slice)<br>• Within each YZ-plane, reduce along Y (columns)<br>• Communication happens vertically',
+                getSteps: () => {
+                    let steps = [];
+                    for (let x = 0; x < X; x++) {
+                        for (let z = 0; z < Z; z++) {
+                            steps.push({
+                                plane: x,
+                                row: z,
+                                processes: Array.from({length: Y}, (_, y) => ({x, y, z})),
+                                label: `X=${x}, Row Z=${z}`
+                            });
+                        }
+                    }
+                    return steps;
+                }
+            },
+            {
+                name: 'Phase 6: Reduce along Z',
+                group: 'GROUP 3: YZ-PLANES (Fix X)',
+                fixedDim: 'X',
+                reduceDim: 'Z',
+                plane: 'YZ',
+                color: 0xffe66d,
+                desc: 'Processing each X-slice separately, reducing data along depth Z-axis lines',
+                detail: '• Fix X coordinate (slice by slice)<br>• Within each YZ-plane, reduce along Z (depth)<br>• Communication happens in depth',
+                getSteps: () => {
+                    let steps = [];
+                    for (let x = 0; x < X; x++) {
+                        for (let y = 0; y < Y; y++) {
+                            steps.push({
+                                plane: x,
+                                column: y,
+                                processes: Array.from({length: Z}, (_, z) => ({x, y, z})),
+                                label: `X=${x}, Column Y=${y}`
+                            });
+                        }
+                    }
+                    return steps;
+                }
+            }
+        ];
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+            scene.fog = new THREE.Fog(0x0a0a0a, 15, 50);
+
+            // Camera
+            const aspect = (window.innerWidth - 450) / window.innerHeight;
+            camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+            camera.position.set(10, 10, 10);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth - 450, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = autoRotate;
+            controls.autoRotateSpeed = 1.5;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const pointLight1 = new THREE.PointLight(0xff6b6b, 1.5, 100);
+            pointLight1.position.set(15, 15, 15);
+            pointLight1.castShadow = true;
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0x4ecdc4, 1.5, 100);
+            pointLight2.position.set(-15, 15, -15);
+            pointLight2.castShadow = true;
+            scene.add(pointLight2);
+
+            const pointLight3 = new THREE.PointLight(0xffe66d, 1, 100);
+            pointLight3.position.set(0, 20, 0);
+            scene.add(pointLight3);
+
+            // Create grid
+            createProcessGrid();
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(12, 12, 0x1a1a1a, 0x1a1a1a);
+            gridHelper.position.y = -3;
+            scene.add(gridHelper);
+
+            // Axes helper
+            const axesHelper = new THREE.AxesHelper(8);
+            scene.add(axesHelper);
+
+            // Add axis labels
+            addAxisLabels();
+
+            // Remove loading text
+            document.getElementById('loading').style.display = 'none';
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Update visualization
+            updatePhaseVisualization();
+            updateUI();
+
+            // Start animation
+            animate();
+        }
+
+        function createProcessGrid() {
+            const spacing = 2.0;
+            const size = 0.6;
+            const geometry = new THREE.BoxGeometry(size, size, size);
+
+            for (let x = 0; x < X; x++) {
+                for (let y = 0; y < Y; y++) {
+                    for (let z = 0; z < Z; z++) {
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x2a4a5a,
+                            emissive: 0x000000,
+                            shininess: 100,
+                            transparent: true,
+                            opacity: 0.7
+                        });
+
+                        const cube = new THREE.Mesh(geometry, material);
+                        const posX = (x - X/2 + 0.5) * spacing;
+                        const posY = (y - Y/2 + 0.5) * spacing;
+                        const posZ = (z - Z/2 + 0.5) * spacing;
+
+                        cube.position.set(posX, posY, posZ);
+                        cube.userData = { x, y, z };
+                        cube.castShadow = true;
+                        cube.receiveShadow = true;
+
+                        // Add wireframe
+                        const edges = new THREE.EdgesGeometry(geometry);
+                        const line = new THREE.LineSegments(
+                            edges,
+                            new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 })
+                        );
+                        cube.add(line);
+
+                        scene.add(cube);
+                        processes.push(cube);
+
+                        // Add label
+                        if (showLabels) {
+                            createLabel(x, y, z, posX, posY, posZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        function createLabel(x, y, z, posX, posY, posZ) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, 128, 64);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${x},${y},${z}`, 64, 40);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(1, 0.5, 1);
+            sprite.position.set(posX, posY, posZ);
+            sprite.userData = { x, y, z };
+
+            scene.add(sprite);
+            labels.push(sprite);
+        }
+
+        function addAxisLabels() {
+            const createTextSprite = (text, color) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = color;
+                ctx.font = 'bold 80px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(text, 128, 90);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(2, 1, 1);
+                return sprite;
+            };
+
+            const xLabel = createTextSprite('X', '#ff6b6b');
+            xLabel.position.set(5, -3, 0);
+            scene.add(xLabel);
+
+            const yLabel = createTextSprite('Y', '#4ecdc4');
+            yLabel.position.set(0, 5, 0);
+            scene.add(yLabel);
+
+            const zLabel = createTextSprite('Z', '#ffe66d');
+            zLabel.position.set(0, -3, 5);
+            scene.add(zLabel);
+        }
+
+        function updatePhaseVisualization() {
+            // Clear existing arrows and planes
+            arrows.forEach(arrow => scene.remove(arrow));
+            arrows = [];
+            planes.forEach(plane => scene.remove(plane));
+            planes = [];
+
+            // Reset all processes
+            processes.forEach(proc => {
+                proc.material.color.setHex(0x2a4a5a);
+                proc.material.emissive.setHex(0x000000);
+                proc.material.emissiveIntensity = 0;
+                proc.material.opacity = 0.4;
+                proc.scale.set(1, 1, 1);
+            });
+
+            const phase = phases[currentPhase];
+            const steps = phase.getSteps();
+
+            if (currentStep >= steps.length) {
+                currentStep = 0;
+            }
+
+            const step = steps[currentStep];
+
+            // Show active plane
+            if (showPlanes) {
+                createActivePlane(phase, step);
+            }
+
+            // Highlight active processes
+            step.processes.forEach((coord, idx) => {
+                const proc = processes.find(p =>
+                    p.userData.x === coord.x &&
+                    p.userData.y === coord.y &&
+                    p.userData.z === coord.z
+                );
+
+                if (proc) {
+                    proc.material.color.setHex(phase.color);
+                    proc.material.emissive.setHex(phase.color);
+                    proc.material.emissiveIntensity = 0.5;
+                    proc.material.opacity = 1.0;
+
+                    const pulse = Math.sin(Date.now() * 0.003) * 0.1 + 1.1;
+                    proc.scale.set(pulse, pulse, pulse);
+
+                    // Create arrows between consecutive processes
+                    if (idx < step.processes.length - 1) {
+                        const nextCoord = step.processes[idx + 1];
+                        createCommunicationArrow(coord, nextCoord, phase.color);
+                    }
+                }
+            });
+
+            // Update step indicator in UI
+            document.getElementById('step-indicator').textContent = `Processing: ${step.label}`;
+            document.getElementById('active-plane').textContent =
+                `${phase.plane}-${step.plane}`;
+        }
+
+        function createActivePlane(phase, step) {
+            const spacing = 2.0;
+            const size = 6;
+            let geometry, position;
+
+            if (phase.plane === 'XY') {
+                geometry = new THREE.PlaneGeometry(size, size);
+                position = [0, 0, (step.plane - Z/2 + 0.5) * spacing];
+            } else if (phase.plane === 'XZ') {
+                geometry = new THREE.PlaneGeometry(size, size);
+                geometry.rotateX(Math.PI / 2);
+                position = [0, (step.plane - Y/2 + 0.5) * spacing, 0];
+            } else { // YZ
+                geometry = new THREE.PlaneGeometry(size, size);
+                geometry.rotateY(Math.PI / 2);
+                position = [(step.plane - X/2 + 0.5) * spacing, 0, 0];
+            }
+
+            const material = new THREE.MeshBasicMaterial({
+                color: phase.color,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
+            });
+
+            const plane = new THREE.Mesh(geometry, material);
+            plane.position.set(...position);
+
+            // Add wireframe
+            const wireframe = new THREE.LineSegments(
+                new THREE.EdgesGeometry(geometry),
+                new THREE.LineBasicMaterial({ color: phase.color, linewidth: 3 })
+            );
+            plane.add(wireframe);
+
+            scene.add(plane);
+            planes.push(plane);
+        }
+
+        function createCommunicationArrow(start, end, color) {
+            const spacing = 2.0;
+            const startPos = new THREE.Vector3(
+                (start.x - X/2 + 0.5) * spacing,
+                (start.y - Y/2 + 0.5) * spacing,
+                (start.z - Z/2 + 0.5) * spacing
+            );
+            const endPos = new THREE.Vector3(
+                (end.x - X/2 + 0.5) * spacing,
+                (end.y - Y/2 + 0.5) * spacing,
+                (end.z - Z/2 + 0.5) * spacing
+            );
+
+            const direction = new THREE.Vector3().subVectors(endPos, startPos);
+            const length = direction.length();
+
+            const arrowHelper = new THREE.ArrowHelper(
+                direction.normalize(),
+                startPos,
+                length,
+                color,
+                0.4,
+                0.3
+            );
+
+            arrowHelper.line.material.linewidth = 3;
+            scene.add(arrowHelper);
+            arrows.push(arrowHelper);
+        }
+
+        function updateUI() {
+            const phase = phases[currentPhase];
+            const steps = phase.getSteps();
+
+            document.getElementById('phase-group').textContent = phase.group;
+            document.getElementById('phase-name').textContent = phase.name;
+            document.getElementById('phase-desc').textContent = phase.desc;
+            document.getElementById('phase-detail').innerHTML = '<strong>What\'s happening:</strong><br>' + phase.detail;
+
+            document.getElementById('grid-size').textContent = `${X}×${Y}×${Z}`;
+            document.getElementById('total-procs').textContent = P;
+            document.getElementById('current-step').textContent = `${currentStep + 1}/${steps.length}`;
+
+            const totalSteps = phases.reduce((sum, p) => sum + p.getSteps().length, 0);
+            const completedSteps = phases.slice(0, currentPhase).reduce((sum, p) => sum + p.getSteps().length, 0) + currentStep;
+            const progress = (completedSteps / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+
+            // Update phase buttons
+            document.querySelectorAll('.phase-button').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === currentPhase);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('play-pause').addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                document.getElementById('play-pause').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            });
+
+            document.getElementById('reset').addEventListener('click', () => {
+                currentPhase = 0;
+                currentStep = 0;
+                updatePhaseVisualization();
+                updateUI();
+            });
+
+            document.getElementById('next-step').addEventListener('click', () => {
+                const steps = phases[currentPhase].getSteps();
+                currentStep++;
+                if (currentStep >= steps.length) {
+                    currentStep = 0;
+                    currentPhase = (currentPhase + 1) % 6;
+                }
+                updatePhaseVisualization();
+                updateUI();
+            });
+
+            document.getElementById('prev-step').addEventListener('click', () => {
+                currentStep--;
+                if (currentStep < 0) {
+                    currentPhase = (currentPhase - 1 + 6) % 6;
+                    currentStep = phases[currentPhase].getSteps().length - 1;
+                }
+                updatePhaseVisualization();
+                updateUI();
+            });
+
+            document.getElementById('speed-slider').addEventListener('input', (e) => {
+                animationSpeed = parseFloat(e.target.value);
+                document.getElementById('speed-value').textContent = animationSpeed.toFixed(1);
+            });
+
+            document.getElementById('auto-rotate').addEventListener('change', (e) => {
+                autoRotate = e.target.checked;
+                controls.autoRotate = autoRotate;
+            });
+
+            document.getElementById('show-planes').addEventListener('change', (e) => {
+                showPlanes = e.target.checked;
+                updatePhaseVisualization();
+            });
+
+            document.getElementById('show-labels').addEventListener('change', (e) => {
+                showLabels = e.target.checked;
+                labels.forEach(label => label.visible = showLabels);
+            });
+
+            document.querySelectorAll('.phase-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentPhase = parseInt(btn.dataset.phase);
+                    currentStep = 0;
+                    updatePhaseVisualization();
+                    updateUI();
+                });
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = (window.innerWidth - 450) / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth - 450, window.innerHeight);
+            });
+        }
+
+        let lastUpdate = 0;
+        const updateInterval = 1000; // Update every 1 second
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = Date.now();
+            if (isPlaying && now - lastUpdate > updateInterval / animationSpeed) {
+                const steps = phases[currentPhase].getSteps();
+                currentStep++;
+                if (currentStep >= steps.length) {
+                    currentStep = 0;
+                    currentPhase = (currentPhase + 1) % 6;
+                }
+                updatePhaseVisualization();
+                updateUI();
+                lastUpdate = now;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
