@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUARA 3D Algorithm Interactive Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #info-panel {
+            width: 400px;
+            background: rgba(20, 20, 30, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 2px solid #4ecdc4;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #ffd700;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        h2 {
+            color: #4ecdc4;
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #4ecdc4;
+            padding-bottom: 5px;
+        }
+
+        .phase-info {
+            background: rgba(78, 205, 196, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .phase-name {
+            font-size: 20px;
+            color: #ffe66d;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .phase-desc {
+            font-size: 14px;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            border: 1px solid #ff6b6b;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .phase-button {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a3a0 100%);
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .phase-button.active {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #0a0a0a;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 230, 109, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ffe66d;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #ffe66d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .legend {
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #4ecdc4;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.8);
+        }
+
+        .checkbox-container {
+            margin: 10px 0;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <div id="loading">Loading SUARA 3D Visualization...</div>
+        </div>
+        <div id="info-panel">
+            <h1>🚀 SUARA 3D Algorithm</h1>
+            <p style="font-size: 13px; color: #999; margin-bottom: 20px;">
+                Scalable Universal Allreduce in 3 Dimensions
+            </p>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Grid Size</div>
+                    <div class="stat-value" id="grid-size">4×4×2</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Processes</div>
+                    <div class="stat-value" id="total-procs">32</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Complexity</div>
+                    <div class="stat-value" id="complexity">O(∛P)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Speedup</div>
+                    <div class="stat-value" id="speedup">1.41×</div>
+                </div>
+            </div>
+
+            <div class="phase-info">
+                <div class="phase-name" id="phase-name">Phase 1: Reduce-Scatter X</div>
+                <div class="phase-desc" id="phase-desc">
+                    Each YZ-plane reduces and scatters data along X dimension
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h2 style="margin-top: 0;">Animation Controls</h2>
+                <button id="play-pause">⏸ Pause</button>
+                <button id="reset">🔄 Reset</button>
+                <button id="next-phase">⏭ Next Phase</button>
+
+                <div style="margin-top: 15px;">
+                    <label for="speed-slider">Animation Speed: <span id="speed-value">1.0</span>×</label>
+                    <input type="range" id="speed-slider" min="0.1" max="3" step="0.1" value="1.0">
+                </div>
+
+                <div class="checkbox-container">
+                    <input type="checkbox" id="auto-rotate" checked>
+                    <label for="auto-rotate">Auto-rotate Camera</label>
+                </div>
+
+                <div class="checkbox-container">
+                    <input type="checkbox" id="show-arrows" checked>
+                    <label for="show-arrows">Show Communication Arrows</label>
+                </div>
+            </div>
+
+            <h2>Phase Selection</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                <button class="phase-button active" data-phase="0">P1: RS-X</button>
+                <button class="phase-button" data-phase="1">P2: RS-Y</button>
+                <button class="phase-button" data-phase="2">P3: RS-Z</button>
+                <button class="phase-button" data-phase="3">P4: AG-Z</button>
+                <button class="phase-button" data-phase="4">P5: AG-Y</button>
+                <button class="phase-button" data-phase="5">P6: AG-X</button>
+            </div>
+
+            <div class="legend">
+                <h2>Legend</h2>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>X-dimension Communication</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Y-dimension Communication</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffe66d;"></div>
+                    <span>Z-dimension Communication</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2a4a5a;"></div>
+                    <span>Inactive Process</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #95e1d3;"></div>
+                    <span>Active Process</span>
+                </div>
+            </div>
+
+            <h2>Algorithm Phases</h2>
+            <div style="font-size: 12px; line-height: 1.8; color: #ccc;">
+                <strong>Reduce-Scatter Phases:</strong><br>
+                1️⃣ Phase 1: X dimension<br>
+                2️⃣ Phase 2: Y dimension<br>
+                3️⃣ Phase 3: Z dimension<br>
+                <br>
+                <strong>Allgather Phases (reverse order):</strong><br>
+                4️⃣ Phase 4: Z dimension<br>
+                5️⃣ Phase 5: Y dimension<br>
+                6️⃣ Phase 6: X dimension<br>
+            </div>
+
+            <div style="margin-top: 30px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 11px; color: #888;">
+                <strong style="color: #4ecdc4;">Interactive Controls:</strong><br>
+                • Left-click + drag: Rotate view<br>
+                • Right-click + drag: Pan view<br>
+                • Scroll: Zoom in/out<br>
+                • Hover over processes for details
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // SUARA 3D Visualization
+        let scene, camera, renderer, controls;
+        let processes = [];
+        let arrows = [];
+        let X = 4, Y = 4, Z = 2;
+        let P = X * Y * Z;
+        let currentPhase = 0;
+        let animationProgress = 0;
+        let isPlaying = true;
+        let animationSpeed = 1.0;
+        let autoRotate = true;
+        let showArrows = true;
+
+        const phases = [
+            { name: 'Phase 1: Reduce-Scatter X', dim: 'X', op: 'reduce-scatter', color: 0xff6b6b, desc: 'Each YZ-plane reduces and scatters data along X dimension' },
+            { name: 'Phase 2: Reduce-Scatter Y', dim: 'Y', op: 'reduce-scatter', color: 0x4ecdc4, desc: 'Each XZ-plane reduces and scatters data along Y dimension' },
+            { name: 'Phase 3: Reduce-Scatter Z', dim: 'Z', op: 'reduce-scatter', color: 0xffe66d, desc: 'Each XY-plane reduces and scatters data along Z dimension' },
+            { name: 'Phase 4: Allgather Z', dim: 'Z', op: 'allgather', color: 0xffe66d, desc: 'Each XY-plane gathers complete data along Z dimension' },
+            { name: 'Phase 5: Allgather Y', dim: 'Y', op: 'allgather', color: 0x4ecdc4, desc: 'Each XZ-plane gathers complete data along Y dimension' },
+            { name: 'Phase 6: Allgather X', dim: 'X', op: 'allgather', color: 0xff6b6b, desc: 'Each YZ-plane gathers complete data along X dimension' }
+        ];
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+            scene.fog = new THREE.Fog(0x0a0a0a, 10, 50);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(8, 8, 8);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth - 400, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = autoRotate;
+            controls.autoRotateSpeed = 2.0;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight1 = new THREE.PointLight(0xff6b6b, 1, 100);
+            pointLight1.position.set(10, 10, 10);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0x4ecdc4, 1, 100);
+            pointLight2.position.set(-10, -10, 10);
+            scene.add(pointLight2);
+
+            const pointLight3 = new THREE.PointLight(0xffe66d, 1, 100);
+            pointLight3.position.set(0, 10, -10);
+            scene.add(pointLight3);
+
+            // Create grid
+            createProcessGrid();
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(10, 10, 0x1a1a1a, 0x1a1a1a);
+            scene.add(gridHelper);
+
+            // Axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+
+            // Remove loading text
+            document.getElementById('loading').style.display = 'none';
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Update UI
+            updateUI();
+
+            // Start animation
+            animate();
+        }
+
+        function createProcessGrid() {
+            const spacing = 1.5;
+            const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+
+            for (let x = 0; x < X; x++) {
+                for (let y = 0; y < Y; y++) {
+                    for (let z = 0; z < Z; z++) {
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x2a4a5a,
+                            emissive: 0x2a4a5a,
+                            emissiveIntensity: 0.2,
+                            shininess: 100
+                        });
+
+                        const cube = new THREE.Mesh(geometry, material);
+                        cube.position.set(
+                            (x - X/2) * spacing,
+                            (y - Y/2) * spacing,
+                            (z - Z/2) * spacing
+                        );
+                        cube.userData = { x, y, z };
+                        cube.castShadow = true;
+                        cube.receiveShadow = true;
+
+                        // Add edge geometry for better visibility
+                        const edges = new THREE.EdgesGeometry(geometry);
+                        const line = new THREE.LineSegments(
+                            edges,
+                            new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 })
+                        );
+                        cube.add(line);
+
+                        scene.add(cube);
+                        processes.push(cube);
+                    }
+                }
+            }
+        }
+
+        function updatePhaseVisualization() {
+            const phase = phases[currentPhase];
+
+            // Clear existing arrows
+            arrows.forEach(arrow => scene.remove(arrow));
+            arrows = [];
+
+            // Reset all processes to inactive
+            processes.forEach(proc => {
+                proc.material.color.setHex(0x2a4a5a);
+                proc.material.emissive.setHex(0x2a4a5a);
+                proc.scale.set(1, 1, 1);
+            });
+
+            // Highlight active dimension
+            const spacing = 1.5;
+
+            if (showArrows) {
+                if (phase.dim === 'X') {
+                    for (let y = 0; y < Y; y++) {
+                        for (let z = 0; z < Z; z++) {
+                            for (let x = 0; x < X - 1; x++) {
+                                createArrow(x, y, z, x + 1, y, z, phase.color, spacing);
+                            }
+                        }
+                    }
+                } else if (phase.dim === 'Y') {
+                    for (let x = 0; x < X; x++) {
+                        for (let z = 0; z < Z; z++) {
+                            for (let y = 0; y < Y - 1; y++) {
+                                createArrow(x, y, z, x, y + 1, z, phase.color, spacing);
+                            }
+                        }
+                    }
+                } else if (phase.dim === 'Z') {
+                    for (let x = 0; x < X; x++) {
+                        for (let y = 0; y < Y; y++) {
+                            for (let z = 0; z < Z - 1; z++) {
+                                createArrow(x, y, z, x, y, z + 1, phase.color, spacing);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Highlight active processes with pulsing effect
+            processes.forEach(proc => {
+                const pulse = Math.sin(animationProgress * 5) * 0.1 + 1;
+                proc.material.color.setHex(phase.color);
+                proc.material.emissive.setHex(phase.color);
+                proc.material.emissiveIntensity = 0.5 * pulse;
+                proc.scale.set(pulse, pulse, pulse);
+            });
+        }
+
+        function createArrow(x1, y1, z1, x2, y2, z2, color, spacing) {
+            const start = new THREE.Vector3(
+                (x1 - X/2) * spacing,
+                (y1 - Y/2) * spacing,
+                (z1 - Z/2) * spacing
+            );
+            const end = new THREE.Vector3(
+                (x2 - X/2) * spacing,
+                (y2 - Y/2) * spacing,
+                (z2 - Z/2) * spacing
+            );
+
+            const direction = new THREE.Vector3().subVectors(end, start);
+            const length = direction.length();
+            const arrowHelper = new THREE.ArrowHelper(
+                direction.normalize(),
+                start,
+                length,
+                color,
+                0.2,
+                0.1
+            );
+            arrowHelper.line.material.linewidth = 2;
+
+            scene.add(arrowHelper);
+            arrows.push(arrowHelper);
+        }
+
+        function updateUI() {
+            const phase = phases[currentPhase];
+            document.getElementById('phase-name').textContent = phase.name;
+            document.getElementById('phase-desc').textContent = phase.desc;
+            document.getElementById('grid-size').textContent = `${X}×${Y}×${Z}`;
+            document.getElementById('total-procs').textContent = P;
+            document.getElementById('complexity').textContent = `O(${Math.round(Math.pow(P, 1/3))})`;
+            document.getElementById('speedup').textContent = `${Math.pow(P, 1/6).toFixed(2)}×`;
+
+            const progress = ((currentPhase + animationProgress) / 6) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+
+            // Update phase buttons
+            document.querySelectorAll('.phase-button').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === currentPhase);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('play-pause').addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                document.getElementById('play-pause').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            });
+
+            document.getElementById('reset').addEventListener('click', () => {
+                currentPhase = 0;
+                animationProgress = 0;
+                updatePhaseVisualization();
+                updateUI();
+            });
+
+            document.getElementById('next-phase').addEventListener('click', () => {
+                currentPhase = (currentPhase + 1) % 6;
+                animationProgress = 0;
+                updatePhaseVisualization();
+                updateUI();
+            });
+
+            document.getElementById('speed-slider').addEventListener('input', (e) => {
+                animationSpeed = parseFloat(e.target.value);
+                document.getElementById('speed-value').textContent = animationSpeed.toFixed(1);
+            });
+
+            document.getElementById('auto-rotate').addEventListener('change', (e) => {
+                autoRotate = e.target.checked;
+                controls.autoRotate = autoRotate;
+            });
+
+            document.getElementById('show-arrows').addEventListener('change', (e) => {
+                showArrows = e.target.checked;
+                updatePhaseVisualization();
+            });
+
+            document.querySelectorAll('.phase-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentPhase = parseInt(btn.dataset.phase);
+                    animationProgress = 0;
+                    updatePhaseVisualization();
+                    updateUI();
+                });
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = (window.innerWidth - 400) / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth - 400, window.innerHeight);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPlaying) {
+                animationProgress += 0.01 * animationSpeed;
+                if (animationProgress >= 1) {
+                    animationProgress = 0;
+                    currentPhase = (currentPhase + 1) % 6;
+                }
+                updatePhaseVisualization();
+                updateUI();
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
